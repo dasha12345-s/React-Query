@@ -1,4 +1,10 @@
-export async function fetchEvents() {
+export async function fetchEvents(serchTerm) {
+  let url =  'http://localhost:3000/events';
+
+  if (serchTerm){
+    url += '?search=' + serchTerm
+  }
+
   const response = await fetch('http://localhost:3000/events');
 
   if (!response.ok) {
