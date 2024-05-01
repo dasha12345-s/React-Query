@@ -4,8 +4,13 @@ import{ fetchEvent, deleteEvent, queryClient } from '../../util/http'
 
 import Header from '../Header.jsx';
 import ErrorBlock from '../UI/ErrorBlock';
+import { useState } from 'react';
+import Modal from '../UI/Modal';
 
 export default function EventDetails() {
+
+  const [isDeliting, setIsDeliting] = useState(false);
+
   const params = useParams();
   const navigate = useNavigate();
   
@@ -16,15 +21,30 @@ export default function EventDetails() {
     }),
   }) 
 
-  const { mutate } = useMutation({
+  const { 
+      mutate, 
+      isPending: isPendingDelition, 
+      isError: isErrorDeleting,
+      error: deleteError,
+    } = useMutation({
     mutationFn: deleteEvent,
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ['events']
+        queryKey: ['events'],
+        refetchType: 'none'
       });
       navigate('/events')
     }
   })
+
+  function handleStartDelete(){
+    setIsDeliting(true);
+  }
+
+  function handleStopDelete(){
+    setIsDeliting(false);
+  }
+
 
   function handleDelete(){
     mutate({ id: params.id });
@@ -60,7 +80,7 @@ export default function EventDetails() {
       <header>
       <h1>{data.title}</h1>
       <nav>
-        <button onClick={handleDelete}>Delete</button>
+        <button onClick={handleStartDelete}>Delete</button>
         <Link to="edit">Edit</Link>
       </nav>
     </header>
@@ -80,6 +100,22 @@ export default function EventDetails() {
   
   return (
     <>
+    {isDeliting && (
+      <Modal onClose={handleStopDelete}>
+      <h2>Are you sure?</h2>
+      <p>Do you really want to delete this event?</p>
+      <div className='form-actions'>
+        {isPendingDelition && <p> DELETING, please wait</p>}
+        {!isPendingDelition && (
+          <>
+          <button onClick={handleStopDelete} className='button-text'> Cancel </button>
+        <button onClick={handleDelete} className='button'> Delete </button>
+          </>
+        )}
+      </div>
+      {isErrorDeleting && <ErrorBlock title='Failed to delete event' message={deleteError.info?.message || 'ERRORR!!'}/>}
+    </Modal>
+    )}
       <Outlet />
       <Header>
         <Link to="/events" className="nav-item">
